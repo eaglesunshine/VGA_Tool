@@ -1,1 +1,6 @@
-﻿
+﻿RCC : warning : No resources in 'VGA_Tool.qrc'.
+  
+  visual_analysis.cpp
+c:\users\lin\desktop\vga_tool\vga_tool\visual_analysis.cpp(66): warning C4715: “Analysis::getFirstLine”: 不是所有的控件路径都返回值
+  VGA_Tool.vcxproj -> C:\Users\lin\Desktop\VGA_Tool\x64\Debug\VGA_Tool.exe
+  VGA_Tool.vcxproj -> C:\Users\lin\Desktop\VGA_Tool\x64\Debug\VGA_Tool.pdb (Full PDB)

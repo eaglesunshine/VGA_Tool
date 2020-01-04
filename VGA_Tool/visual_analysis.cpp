@@ -121,7 +121,36 @@ void Analysis::output(map<int, string> &Visibility_vga, map<int, int> &Connectiv
 	out.close();
 }
 
-void Analysis::Start()
+void Analysis::outputResult(map<int, double> &viewResult, map<int, double> &viewedResult, string fileName)
+{
+	ofstream out;
+	out.open(fileName);
+
+	//写入第一行
+	out <<"startID,viewCount,viewedCount" << endl;
+
+	for (auto it = viewResult.begin(); it != viewResult.end(); it++)
+	{
+		int id = it->first;
+		out << id << "," << viewResult[id] << "," << viewedResult[id]<< endl;
+	}
+	out.close();
+}
+
+void getIDset(set<int> &IDset, string FromStr)
+{
+	IDset.clear();
+
+	stringstream ss(FromStr);
+	string str;
+
+	while (getline(ss, str, ','))	// 按照逗号分隔,读取一行
+	{
+		IDset.insert(atoi(str.c_str()));
+	}
+}
+
+void Analysis::Run()
 {
 	//读取文件数据
 	getLinksMap(AccessLinks, this->AccessLinksFile);
@@ -153,4 +182,128 @@ void Analysis::Start()
 	//输出结果文件
 	string firstLine = getFirstLine(this->Visibility_vgaFile);
 	output(Visibility_vga, ConnectivityData, Result, firstLine, this->outputFile);
+}
+
+void Analysis::analysis(string FromStr)
+{
+	//获取起点id
+	set<int> IDset;
+	getIDset(IDset, FromStr);
+
+	//读取文件数据
+	getLinksMap(AccessLinks, this->AccessLinksFile);
+	getLinksMap(VisibilityLinks, this->VisibilityLinksFile);
+
+	//view analysis：找出当前栅格一次拓扑能够到达的所有栅格，再根据这些栅格找出它们可以看见的所有栅格
+	set<int> validLinks;	//所有可见域
+	set<int> accessPoints;	//所有可达域
+	set<int> searchedIDs;
+
+	map<int, double> viewResult;
+	map<int, map<int, int>> viewCountMap;
+	map<int, int> subViewCountMap;
+	for (auto it = IDset.begin(); it != IDset.end(); it++)
+	{
+		int startID = *it;
+		searchedIDs.clear();
+		validLinks.clear();
+		accessPoints.clear();
+		accessPoints.insert(startID);
+
+		int viewCount = 0;
+		subViewCountMap.clear();
+		while (validLinks.size() < VisibilityLinks.size())
+		{
+			//1次拓扑
+			set<int> accessSet;
+			for (auto it = accessPoints.begin(); it != accessPoints.end(); it++)
+			{				
+				int id = *it;
+
+				//如果是已经被检索过的ID，就跳出
+				if (searchedIDs.count(id) == 1)
+					continue;
+
+				//当前栅格可见域
+				validLinks.insert(VisibilityLinks[id].begin(), VisibilityLinks[id].end());
+				searchedIDs.insert(id);
+
+				//一次拓扑可达的栅格
+				accessSet.insert(AccessLinks[id].begin(), AccessLinks[id].end());
+			}
+			++viewCount;
+			subViewCountMap[viewCount] = int(accessPoints.size());
+
+			accessPoints.clear();
+			accessPoints.insert(accessSet.begin(), accessSet.end());
+			
+		}
+
+		viewCountMap.insert(make_pair(startID, subViewCountMap));
+
+		double sum = 0, subsum = 0;
+		for (auto iter = subViewCountMap.begin(); iter != subViewCountMap.end(); iter++)
+		{
+			subsum += double(iter->second);
+			sum += double(iter->first)*double(iter->second);
+		}
+		double result = sum / subsum;
+		viewResult.insert(make_pair(startID, result));
+	}
+	
+	//viewed analysis
+	set<int> viewPoints;
+	map<int, double> viewedResult;
+	map<int, map<int, int>> viewedCountMap;
+	map<int, int> subViewedCountMap;
+	for (auto it = IDset.begin(); it != IDset.end(); it++)
+	{
+		int startID = *it;
+		searchedIDs.clear();
+		validLinks.clear();
+		viewPoints.clear();
+		viewPoints.insert(startID);
+
+		int viewCount = 0;
+		subViewedCountMap.clear();
+		while (validLinks.size() < VisibilityLinks.size())
+		{
+			//1次拓扑
+			set<int> viewSet;
+			for (auto it = viewPoints.begin(); it != viewPoints.end(); it++)
+			{
+				int id = *it;
+
+				//如果是已经被检索过的ID，就跳出
+				if (searchedIDs.count(id) == 1)
+					continue;
+
+				//当前栅格可见域
+				validLinks.insert(VisibilityLinks[id].begin(), VisibilityLinks[id].end());
+				searchedIDs.insert(id);
+
+				//一次拓扑可视的栅格
+				viewSet.insert(VisibilityLinks[id].begin(), VisibilityLinks[id].end());
+			}
+			++viewCount;
+			subViewedCountMap[viewCount] = int(viewPoints.size());
+
+			viewPoints.clear();
+			viewPoints.insert(viewSet.begin(), viewSet.end());
+		}
+
+		viewedCountMap.insert(make_pair(startID, subViewedCountMap));
+
+		double sum = 0, subsum = 0;
+		for (auto iter = subViewedCountMap.begin(); iter != subViewedCountMap.end(); iter++)
+		{
+			subsum += double(iter->second);
+			sum += double(iter->first)*double(iter->second);
+		}
+		double result = sum / subsum;
+		viewedResult.insert(make_pair(startID, result));
+	}
+
+	//输出结果
+	outputResult(viewResult, viewedResult, outputFile);
 }

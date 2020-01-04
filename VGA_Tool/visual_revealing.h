@@ -30,6 +30,6 @@ public:
 	void output(map<int, map<string, double>> &Visibility_vga, string firstLine, string fileName);
 	string getFirstLine(string fileName);
 
-	void Start();
+	void Run();
 	inline void calculate(vector<double> &resultSet, double &mean, double &stdev);
 };

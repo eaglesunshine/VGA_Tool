@@ -146,7 +146,7 @@ inline void Reveal::calculate(vector<double> &resultSet, double &mean, double &s
 	stdev = sqrt(accum / double(resultSet.size() - 1)); //方差
 }
 
-void Reveal::Start()
+void Reveal::Run()
 {
 	//读取文件数据
 	getAccessLinks(AccessLinks, AccessLinksFile);

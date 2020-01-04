@@ -31,6 +31,8 @@ public:
 	string getFirstLine(string fileName);
 	void getVisibility_vga(map<int, string> &Visibility_vga, map<int, int> &ConnectivityData, string fileName);
 	void output(map<int, string> &Visibility_vga, map<int, int> &ConnectivityData, map<int, int> &Result, string firstLine, string fileName);
+	void outputResult(map<int, double> &viewResult, map<int, double> &viewedResult, string fileName);
 
-	void Start();
+	void Run();
+	void analysis(string FromStr);
 };
